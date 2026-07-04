@@ -63,7 +63,7 @@ npm run dev
    - `NODE_ENV` → `production`
 7. Click **Create Web Service**
 
-Your API will be at: `https://madhan-music-api.onrender.com`
+Your API will be at: `https://music-player-s56t.onrender.com`
 
 ---
 
@@ -89,7 +89,7 @@ npm run dev
 
 1. Update `frontend/.env`:
    ```
-   VITE_API_URL=https://madhan-music-api.onrender.com
+   VITE_API_URL=https://music-player-s56t.onrender.com
    ```
 
 2. Update `frontend/package.json` homepage:

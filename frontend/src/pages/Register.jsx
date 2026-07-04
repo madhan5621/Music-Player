@@ -1,14 +1,189 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Music2, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Music2, Mail, Lock, User, Eye, EyeOff, Headphones, Disc3, AudioWaveform } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 
+/* ── floating particle component ── */
+function FloatingParticle({ delay, duration, x, y, size }) {
+  return (
+    <motion.div
+      className="absolute rounded-full"
+      style={{
+        width: size,
+        height: size,
+        left: `${x}%`,
+        top: `${y}%`,
+        background: `radial-gradient(circle, rgba(120, 0, 255, 0.25) 0%, transparent 70%)`,
+      }}
+      animate={{
+        y: [0, -30, 0],
+        opacity: [0.2, 0.6, 0.2],
+        scale: [1, 1.3, 1],
+      }}
+      transition={{
+        duration,
+        delay,
+        repeat: Infinity,
+        ease: 'easeInOut',
+      }}
+    />
+  );
+}
+
+/* ── animated equalizer bars ── */
+function EqualizerBars() {
+  const bars = [
+    { h: '60%', delay: 0 },
+    { h: '85%', delay: 0.15 },
+    { h: '45%', delay: 0.3 },
+    { h: '70%', delay: 0.1 },
+    { h: '55%', delay: 0.25 },
+    { h: '90%', delay: 0.05 },
+    { h: '40%', delay: 0.2 },
+  ];
+
+  return (
+    <div className="flex items-end gap-[3px] h-10">
+      {bars.map((bar, i) => (
+        <motion.div
+          key={i}
+          className="w-[3px] rounded-full"
+          style={{
+            background: 'linear-gradient(to top, rgba(120, 0, 255, 0.6), rgba(0, 229, 255, 0.4))',
+          }}
+          animate={{
+            height: ['20%', bar.h, '30%', bar.h, '20%'],
+          }}
+          transition={{
+            duration: 1.2,
+            delay: bar.delay,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── vinyl disc animation ── */
+function VinylDisc() {
+  return (
+    <motion.div
+      className="relative w-40 h-40 sm:w-48 sm:h-48"
+      animate={{ rotate: 360 }}
+      transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: `conic-gradient(from 0deg,
+            rgba(120, 0, 255, 0.15),
+            rgba(0, 229, 255, 0.1),
+            rgba(120, 0, 255, 0.2),
+            rgba(0, 229, 255, 0.15),
+            rgba(120, 0, 255, 0.15))`,
+          border: '2px solid rgba(120, 0, 255, 0.2)',
+        }}
+      />
+      {[30, 42, 54, 66, 78].map((size) => (
+        <div
+          key={size}
+          className="absolute rounded-full"
+          style={{
+            width: `${size}%`,
+            height: `${size}%`,
+            top: `${(100 - size) / 2}%`,
+            left: `${(100 - size) / 2}%`,
+            border: '1px solid rgba(255, 255, 255, 0.04)',
+          }}
+        />
+      ))}
+      <div
+        className="absolute rounded-full flex items-center justify-center"
+        style={{
+          width: '22%',
+          height: '22%',
+          top: '39%',
+          left: '39%',
+          background: 'linear-gradient(135deg, rgba(120, 0, 255, 0.3), rgba(0, 229, 255, 0.3))',
+          border: '2px solid rgba(120, 0, 255, 0.3)',
+        }}
+      >
+        <div className="w-2 h-2 rounded-full" style={{ background: 'rgba(120, 0, 255, 0.6)' }} />
+      </div>
+    </motion.div>
+  );
+}
+
+/* ── reusable input field ── */
+function InputField({ id, icon: Icon, label, type = 'text', value, onChange, onFocus, onBlur, placeholder, required, minLength, focused, fieldName, children }) {
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="block text-xs font-semibold uppercase tracking-wider mb-2"
+        style={{ color: '#A1A1AA', letterSpacing: '0.08em' }}
+      >
+        {label}
+      </label>
+      <div
+        className="relative flex items-stretch rounded-xl overflow-hidden"
+        style={{
+          background: '#111111',
+          border: `1.5px solid ${focused === fieldName ? 'rgba(0, 229, 255, 0.5)' : '#2A2A2A'}`,
+          boxShadow: focused === fieldName
+            ? '0 0 0 3px rgba(0, 229, 255, 0.08), 0 0 20px rgba(0, 229, 255, 0.06)'
+            : 'none',
+          transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+        }}
+      >
+        {/* Icon area */}
+        <div
+          className="flex items-center justify-center flex-shrink-0"
+          style={{
+            width: 44,
+            minWidth: 44,
+            background: focused === fieldName ? 'rgba(0, 229, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+            borderRight: `1px solid ${focused === fieldName ? 'rgba(0, 229, 255, 0.2)' : '#2A2A2A'}`,
+            transition: 'background 0.3s ease, border-color 0.3s ease',
+          }}
+        >
+          <Icon size={16} style={{ color: focused === fieldName ? '#00E5FF' : '#71717A', transition: 'color 0.3s' }} />
+        </div>
+        {/* Input */}
+        <input
+          id={id}
+          type={type}
+          value={value}
+          onChange={onChange}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          placeholder={placeholder}
+          required={required}
+          minLength={minLength}
+          className="flex-1 min-w-0 py-3.5 px-3 text-sm outline-none"
+          style={{
+            background: 'transparent',
+            color: '#FFFFFF',
+            caretColor: '#00E5FF',
+          }}
+        />
+        {/* Optional trailing element */}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ── main register component ── */
 export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [focused, setFocused] = useState(null);
   const { register, isLoading, error, clearError } = useAuthStore();
   const navigate = useNavigate();
 
@@ -21,119 +196,373 @@ export default function Register() {
   };
 
   const passwordStrength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 2 : 3;
-  const strengthColors = ['', 'bg-danger', 'bg-warning', 'bg-success'];
+  const strengthColors = ['', '#EF4444', '#F59E0B', '#22C55E'];
   const strengthLabels = ['', 'Weak', 'Medium', 'Strong'];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.08, delayChildren: 0.15 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } },
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 gradient-mesh">
-      <div className="absolute inset-0 bg-gradient-to-br from-bg-primary via-bg-primary/95 to-bg-primary" />
-      
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative w-full max-w-md"
-      >
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/20 glow-accent">
-            <Music2 className="h-8 w-8 text-accent" />
-          </div>
-          <h1 className="text-3xl font-bold text-text-primary">Create Account</h1>
-          <p className="mt-2 text-text-secondary">Join Madhan Music</p>
+    <div className="flex min-h-screen min-h-[100dvh] overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+      {/* ── LEFT PANEL (visual showcase — desktop only) ── */}
+      <div className="hidden lg:flex lg:w-[55%] relative items-center justify-center overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(ellipse at 30% 20%, rgba(120, 0, 255, 0.12) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(0, 229, 255, 0.1) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 50%, rgba(120, 0, 255, 0.05) 0%, transparent 60%),
+              linear-gradient(135deg, #050510 0%, #0a0a1a 50%, #080818 100%)`,
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(120, 0, 255, 0.5) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(120, 0, 255, 0.5) 1px, transparent 1px)`,
+            backgroundSize: '60px 60px',
+          }}
+        />
+
+        <FloatingParticle delay={0} duration={4} x={15} y={20} size={80} />
+        <FloatingParticle delay={1} duration={5} x={70} y={15} size={60} />
+        <FloatingParticle delay={2} duration={3.5} x={40} y={70} size={100} />
+        <FloatingParticle delay={0.5} duration={4.5} x={80} y={60} size={50} />
+        <FloatingParticle delay={1.5} duration={6} x={25} y={80} size={70} />
+
+        <div className="relative z-10 flex flex-col items-center text-center px-12">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
+          >
+            <VinylDisc />
+          </motion.div>
+
+          <motion.div
+            className="mt-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+          >
+            <EqualizerBars />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
+            className="mt-10"
+          >
+            <h2
+              className="text-4xl xl:text-5xl font-bold tracking-tight"
+              style={{
+                background: 'linear-gradient(135deg, #FFFFFF 0%, #7800FF 50%, #00E5FF 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              Start Your
+              <br />
+              Music Journey
+            </h2>
+            <p className="mt-4 text-base xl:text-lg max-w-sm mx-auto" style={{ color: '#71717A' }}>
+              Create your account and unlock unlimited access to your personal cloud music library.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="flex flex-wrap justify-center gap-3 mt-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
+          >
+            {[
+              { icon: Headphones, label: 'Hi-Fi Audio' },
+              { icon: Disc3, label: 'Smart Playlists' },
+              { icon: AudioWaveform, label: 'Live Analytics' },
+            ].map(({ icon: Icon, label }) => (
+              <div
+                key={label}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium"
+                style={{
+                  background: 'rgba(120, 0, 255, 0.06)',
+                  border: '1px solid rgba(120, 0, 255, 0.15)',
+                  color: '#A1A1AA',
+                }}
+              >
+                <Icon size={14} style={{ color: '#7800FF' }} />
+                {label}
+              </div>
+            ))}
+          </motion.div>
         </div>
 
-        <div className="glass rounded-3xl p-8">
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="mb-6 rounded-xl bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger"
+        <div
+          className="absolute bottom-0 left-0 right-0 h-32"
+          style={{ background: 'linear-gradient(to top, #080808, transparent)' }}
+        />
+      </div>
+
+      {/* ── RIGHT PANEL (register form) ── */}
+      <div
+        className="flex w-full lg:w-[45%] items-center justify-center px-6 sm:px-8 py-8 relative"
+        style={{ background: '#080808' }}
+      >
+        <div
+          className="absolute inset-0 lg:hidden"
+          style={{
+            background: `
+              radial-gradient(ellipse at 50% 20%, rgba(120, 0, 255, 0.08) 0%, transparent 60%),
+              radial-gradient(ellipse at 30% 70%, rgba(0, 229, 255, 0.05) 0%, transparent 50%)`,
+          }}
+        />
+        <div
+          className="hidden lg:block absolute left-0 top-0 bottom-0 w-32"
+          style={{ background: 'linear-gradient(to right, rgba(120, 0, 255, 0.03), transparent)' }}
+        />
+
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="relative w-full max-w-[400px]"
+        >
+          {/* Mobile logo */}
+          <motion.div variants={itemVariants} className="lg:hidden mb-6 text-center">
+            <div
+              className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl"
+              style={{
+                background: 'rgba(0, 229, 255, 0.15)',
+                boxShadow: '0 0 30px rgba(0, 229, 255, 0.15)',
+              }}
             >
-              {error}
+              <Music2 size={26} style={{ color: '#00E5FF' }} />
+            </div>
+            <h1 className="text-xl font-bold" style={{ color: '#FFFFFF' }}>Madhan Music</h1>
+          </motion.div>
+
+          {/* Welcome text */}
+          <motion.div variants={itemVariants} className="mb-5 sm:mb-7">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: '#FFFFFF' }}>
+              Create Account
+            </h1>
+            <p className="mt-1.5 text-sm" style={{ color: '#71717A' }}>
+              Join Madhan Music and start streaming
+            </p>
+          </motion.div>
+
+          {/* Error */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginBottom: 16 }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                className="overflow-hidden"
+              >
+                <div
+                  className="rounded-xl px-4 py-3 text-sm flex items-center gap-2.5"
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    color: '#EF4444',
+                  }}
+                >
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#EF4444' }} />
+                  {error}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Name field */}
+            <motion.div variants={itemVariants}>
+              <InputField
+                id="register-name"
+                icon={User}
+                label="Full Name"
+                type="text"
+                value={name}
+                onChange={(e) => { setName(e.target.value); clearError(); }}
+                onFocus={() => setFocused('name')}
+                onBlur={() => setFocused(null)}
+                placeholder="Your name"
+                required
+                focused={focused}
+                fieldName="name"
+              />
             </motion.div>
-          )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-text-secondary">Name</label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => { setName(e.target.value); clearError(); }}
-                  placeholder="Your name"
-                  required
-                  className="w-full rounded-xl border border-border bg-bg-card px-10 py-3 text-sm text-text-primary placeholder-text-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
-                />
-              </div>
-            </div>
+            {/* Email field */}
+            <motion.div variants={itemVariants}>
+              <InputField
+                id="register-email"
+                icon={Mail}
+                label="Email Address"
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); clearError(); }}
+                onFocus={() => setFocused('email')}
+                onBlur={() => setFocused(null)}
+                placeholder="you@example.com"
+                required
+                focused={focused}
+                fieldName="email"
+              />
+            </motion.div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-text-secondary">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); clearError(); }}
-                  placeholder="you@example.com"
-                  required
-                  className="w-full rounded-xl border border-border bg-bg-card px-10 py-3 text-sm text-text-primary placeholder-text-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-text-secondary">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); clearError(); }}
-                  placeholder="Min 6 characters"
-                  required
-                  minLength={6}
-                  className="w-full rounded-xl border border-border bg-bg-card px-10 py-3 text-sm text-text-primary placeholder-text-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
-                />
+            {/* Password field */}
+            <motion.div variants={itemVariants}>
+              <InputField
+                id="register-password"
+                icon={Lock}
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); clearError(); }}
+                onFocus={() => setFocused('password')}
+                onBlur={() => setFocused(null)}
+                placeholder="Min 6 characters"
+                required
+                minLength={6}
+                focused={focused}
+                fieldName="password"
+              >
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
+                  className="flex items-center justify-center flex-shrink-0 px-3"
+                  style={{ color: '#71717A' }}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
-              </div>
+              </InputField>
+              {/* Password strength meter */}
               {password.length > 0 && (
-                <div className="mt-2 flex items-center gap-2">
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="mt-2.5 flex items-center gap-2.5"
+                >
                   <div className="flex flex-1 gap-1">
                     {[1, 2, 3].map(i => (
-                      <div key={i} className={`h-1 flex-1 rounded-full ${i <= passwordStrength ? strengthColors[passwordStrength] : 'bg-border'}`} />
+                      <div
+                        key={i}
+                        className="h-1 flex-1 rounded-full"
+                        style={{
+                          background: i <= passwordStrength ? strengthColors[passwordStrength] : '#2A2A2A',
+                          transition: 'background 0.3s ease',
+                        }}
+                      />
                     ))}
                   </div>
-                  <span className="text-xs text-text-muted">{strengthLabels[passwordStrength]}</span>
-                </div>
+                  <span className="text-xs font-medium" style={{ color: strengthColors[passwordStrength] || '#71717A' }}>
+                    {strengthLabels[passwordStrength]}
+                  </span>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full rounded-xl bg-accent py-3 text-sm font-semibold text-bg-primary hover:bg-accent-hover disabled:opacity-50 transition-colors glow-accent"
-            >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
-            </button>
+            {/* Submit button */}
+            <motion.div variants={itemVariants} className="pt-1">
+              <motion.button
+                type="submit"
+                disabled={isLoading}
+                className="w-full relative overflow-hidden rounded-xl py-3.5 text-sm font-semibold"
+                style={{
+                  background: 'linear-gradient(135deg, #00E5FF 0%, #00B8D4 100%)',
+                  color: '#080808',
+                  opacity: isLoading ? 0.6 : 1,
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 0 20px rgba(0, 229, 255, 0.2), 0 4px 15px rgba(0, 229, 255, 0.15)',
+                }}
+                whileHover={!isLoading ? {
+                  boxShadow: '0 0 30px rgba(0, 229, 255, 0.35), 0 6px 20px rgba(0, 229, 255, 0.25)',
+                  scale: 1.01,
+                } : {}}
+                whileTap={!isLoading ? { scale: 0.985 } : {}}
+              >
+                <motion.div
+                  className="absolute inset-0"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)',
+                  }}
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                />
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {isLoading ? (
+                    <>
+                      <motion.div
+                        className="w-4 h-4 rounded-full"
+                        style={{ border: '2px solid rgba(8, 8, 8, 0.3)', borderTopColor: '#080808' }}
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                      />
+                      Creating Account...
+                    </>
+                  ) : (
+                    'Create Account'
+                  )}
+                </span>
+              </motion.button>
+            </motion.div>
           </form>
 
-          <p className="mt-6 text-center text-sm text-text-muted">
+          {/* Divider */}
+          <motion.div variants={itemVariants} className="flex items-center gap-4 my-5">
+            <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #2A2A2A)' }} />
+            <span className="text-xs font-medium" style={{ color: '#71717A' }}>or</span>
+            <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, #2A2A2A)' }} />
+          </motion.div>
+
+          {/* Sign in link */}
+          <motion.p variants={itemVariants} className="text-center text-sm" style={{ color: '#71717A' }}>
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-accent hover:text-accent-hover">
+            <Link
+              to="/login"
+              className="font-semibold inline-flex items-center gap-1"
+              style={{ color: '#00E5FF' }}
+            >
               Sign In
+              <motion.span
+                animate={{ x: [0, 3, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                →
+              </motion.span>
             </Link>
-          </p>
-        </div>
-      </motion.div>
+          </motion.p>
+
+          {/* Footer branding */}
+          <motion.div variants={itemVariants} className="mt-6 flex items-center justify-center gap-2">
+            <div
+              className="flex h-6 w-6 items-center justify-center rounded-lg"
+              style={{ background: 'rgba(0, 229, 255, 0.1)' }}
+            >
+              <Music2 size={12} style={{ color: '#00E5FF' }} />
+            </div>
+            <span className="text-xs font-medium" style={{ color: '#333333' }}>
+              Madhan Music • Personal Cloud Streaming
+            </span>
+          </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }

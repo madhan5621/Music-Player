@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "node deploy.js"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.59.0",
