@@ -45,3 +45,4 @@ backend/.env
 design.md
 # GitHub Pages deployment branch
 gh-pages/
+graphify-out/
