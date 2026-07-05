@@ -1,158 +1,293 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Music2, Mail, Lock, User, Eye, EyeOff, Headphones, Disc3, AudioWaveform } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  AlertCircle,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Headphones,
+  Lock,
+  Mail,
+  Music2,
+  Play,
+  User,
+} from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 
-/* ── floating particle component ── */
-function FloatingParticle({ delay, duration, x, y, size }) {
+const T = {
+  surface: {
+    base: '#0A0D10',
+    shell: '#10151A',
+    card: '#161C22',
+    raised: '#1D252D',
+    border: '#27313A',
+  },
+  accent: '#03AAE2',
+  text: {
+    primary: '#F2F5F7',
+    secondary: '#B8C2CC',
+    muted: '#7F8B96',
+  },
+  support: {
+    violet: '#7C6CFF',
+    coral: '#FF7A6A',
+    lime: '#8DDC6F',
+  },
+};
+
+const albumStack = [
+  {
+    title: 'First Light Mix',
+    artist: 'Nila Coast',
+    color: `linear-gradient(135deg, #172D35 0%, ${T.accent} 48%, #0A0D10 100%)`,
+  },
+  {
+    title: 'Velvet Static',
+    artist: 'Rhea North',
+    color: `linear-gradient(135deg, #21183A 0%, ${T.support.violet} 50%, #0D1117 100%)`,
+  },
+  {
+    title: 'Late Train Radio',
+    artist: 'Ishan Park',
+    color: `linear-gradient(135deg, #3A221C 0%, ${T.support.coral} 48%, #12181E 100%)`,
+  },
+];
+
+function AlbumArtwork({ item, className = '', active = false }) {
   return (
-    <motion.div
-      className="absolute rounded-full"
+    <div
+      className={`relative overflow-hidden ${className}`}
       style={{
-        width: size,
-        height: size,
-        left: `${x}%`,
-        top: `${y}%`,
-        background: `radial-gradient(circle, rgba(120, 0, 255, 0.25) 0%, transparent 70%)`,
+        aspectRatio: '1 / 1',
+        borderRadius: active ? 24 : 18,
+        background: item.color,
+        boxShadow: active
+          ? '0 28px 70px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.12)'
+          : '0 18px 42px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.10)',
       }}
-      animate={{
-        y: [0, -30, 0],
-        opacity: [0.2, 0.6, 0.2],
-        scale: [1, 1.3, 1],
-      }}
-      transition={{
-        duration,
-        delay,
-        repeat: Infinity,
-        ease: 'easeInOut',
-      }}
-    />
-  );
-}
-
-/* ── animated equalizer bars ── */
-function EqualizerBars() {
-  const bars = [
-    { h: '60%', delay: 0 },
-    { h: '85%', delay: 0.15 },
-    { h: '45%', delay: 0.3 },
-    { h: '70%', delay: 0.1 },
-    { h: '55%', delay: 0.25 },
-    { h: '90%', delay: 0.05 },
-    { h: '40%', delay: 0.2 },
-  ];
-
-  return (
-    <div className="flex items-end gap-[3px] h-10">
-      {bars.map((bar, i) => (
-        <motion.div
-          key={i}
-          className="w-[3px] rounded-full"
-          style={{
-            background: 'linear-gradient(to top, rgba(120, 0, 255, 0.6), rgba(0, 229, 255, 0.4))',
-          }}
-          animate={{
-            height: ['20%', bar.h, '30%', bar.h, '20%'],
-          }}
-          transition={{
-            duration: 1.2,
-            delay: bar.delay,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(160deg, rgba(255,255,255,0.18), transparent 34%), radial-gradient(circle at 74% 20%, rgba(255,255,255,0.24), transparent 24%)',
+        }}
+      />
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '54%',
+          height: '54%',
+          left: '23%',
+          top: '23%',
+          border: '1px solid rgba(255,255,255,0.26)',
+          boxShadow: 'inset 0 0 0 18px rgba(0,0,0,0.16), inset 0 0 0 19px rgba(255,255,255,0.12)',
+        }}
+      />
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 18,
+          height: 18,
+          left: 'calc(50% - 9px)',
+          top: 'calc(50% - 9px)',
+          background: T.surface.base,
+          boxShadow: '0 0 0 5px rgba(255,255,255,0.12)',
+        }}
+      />
+      <div className="absolute bottom-4 left-4 right-4">
+        <p className="truncate text-sm font-semibold" style={{ color: T.text.primary }}>
+          {item.title}
+        </p>
+        <p className="truncate text-xs" style={{ color: 'rgba(242,245,247,0.72)' }}>
+          {item.artist}
+        </p>
+      </div>
     </div>
   );
 }
 
-/* ── vinyl disc animation ── */
-function VinylDisc() {
+function AuthVisual() {
   return (
-    <motion.div
-      className="relative w-40 h-40 sm:w-48 sm:h-48"
-      animate={{ rotate: 360 }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-    >
+    <section className="relative hidden min-h-[100dvh] overflow-hidden lg:flex lg:w-[58%]">
       <div
-        className="absolute inset-0 rounded-full"
+        className="absolute inset-0"
         style={{
-          background: `conic-gradient(from 0deg,
-            rgba(120, 0, 255, 0.15),
-            rgba(0, 229, 255, 0.1),
-            rgba(120, 0, 255, 0.2),
-            rgba(0, 229, 255, 0.15),
-            rgba(120, 0, 255, 0.15))`,
-          border: '2px solid rgba(120, 0, 255, 0.2)',
+          background: `
+            radial-gradient(ellipse at 32% 22%, rgba(124,108,255,0.15), transparent 42%),
+            radial-gradient(ellipse at 78% 78%, rgba(3,170,226,0.12), transparent 46%),
+            linear-gradient(145deg, ${T.surface.base} 0%, ${T.surface.shell} 54%, #070A0D 100%)`,
         }}
       />
-      {[30, 42, 54, 66, 78].map((size) => (
-        <div
-          key={size}
-          className="absolute rounded-full"
-          style={{
-            width: `${size}%`,
-            height: `${size}%`,
-            top: `${(100 - size) / 2}%`,
-            left: `${(100 - size) / 2}%`,
-            border: '1px solid rgba(255, 255, 255, 0.04)',
-          }}
-        />
-      ))}
-      <div
-        className="absolute rounded-full flex items-center justify-center"
-        style={{
-          width: '22%',
-          height: '22%',
-          top: '39%',
-          left: '39%',
-          background: 'linear-gradient(135deg, rgba(120, 0, 255, 0.3), rgba(0, 229, 255, 0.3))',
-          border: '2px solid rgba(120, 0, 255, 0.3)',
-        }}
-      >
-        <div className="w-2 h-2 rounded-full" style={{ background: 'rgba(120, 0, 255, 0.6)' }} />
+      <div className="relative z-10 grid w-full grid-cols-[minmax(0,1fr)_210px] items-center gap-10 px-12 xl:px-16">
+        <div className="max-w-[560px]">
+          <div className="mb-7 flex items-center gap-3">
+            <div
+              className="flex h-12 w-12 items-center justify-center"
+              style={{
+                borderRadius: 16,
+                background: T.surface.card,
+                boxShadow: '8px 8px 18px rgba(0,0,0,0.30), -4px -4px 14px rgba(255,255,255,0.035)',
+              }}
+            >
+              <Music2 size={23} style={{ color: T.accent }} />
+            </div>
+            <span className="text-sm font-semibold" style={{ color: T.text.secondary }}>
+              Madhan Music
+            </span>
+          </div>
+
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
+            <AlbumArtwork item={albumStack[0]} className="mb-8 w-full max-w-[430px]" active />
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.55 }}
+            className="text-[44px] font-bold leading-[1.05] xl:text-[54px]"
+            style={{ color: T.text.primary }}
+          >
+            Build a library that follows the night.
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18, duration: 0.55 }}
+            className="mt-5 max-w-[460px] text-base leading-7"
+            style={{ color: T.text.secondary }}
+          >
+            Create your account and keep playlists, favorites, and listening history ready across devices.
+          </motion.p>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <AlbumArtwork item={albumStack[1]} className="w-full" />
+          <div
+            className="flex items-center gap-4 p-4"
+            style={{
+              borderRadius: 22,
+              background: T.surface.card,
+              boxShadow: '10px 10px 26px rgba(0,0,0,0.34), -4px -4px 16px rgba(255,255,255,0.035)',
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Preview current track"
+              className="flex h-12 w-12 shrink-0 items-center justify-center"
+              style={{
+                borderRadius: 16,
+                background: T.accent,
+                color: T.surface.base,
+                boxShadow: '0 0 24px rgba(3,170,226,0.24)',
+              }}
+            >
+              <Play size={20} fill="currentColor" />
+            </button>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold" style={{ color: T.text.primary }}>
+                Fresh picks
+              </p>
+              <p className="truncate text-xs" style={{ color: T.text.muted }}>
+                Ready for your first save
+              </p>
+            </div>
+          </div>
+          <AlbumArtwork item={albumStack[2]} className="w-[76%] self-end" />
+        </div>
       </div>
-    </motion.div>
+    </section>
   );
 }
 
-/* ── reusable input field ── */
-function InputField({ id, icon: Icon, label, type = 'text', value, onChange, onFocus, onBlur, placeholder, required, minLength, focused, fieldName, children }) {
+function MobileBrand() {
+  return (
+    <div className="lg:hidden">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-11 w-11 items-center justify-center"
+            style={{ borderRadius: 15, background: T.surface.card }}
+          >
+            <Music2 size={21} style={{ color: T.accent }} />
+          </div>
+          <span className="text-sm font-semibold" style={{ color: T.text.secondary }}>
+            Madhan Music
+          </span>
+        </div>
+        <div className="flex -space-x-3">
+          {albumStack.map((item) => (
+            <AlbumArtwork key={item.title} item={item} className="h-11 w-11 border border-[#10151A]" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileListeningPreview() {
+  return (
+    <div
+      className="mb-5 flex items-center gap-4 p-5 lg:hidden"
+      style={{
+        borderRadius: 24,
+        background: T.surface.card,
+        border: '1px solid rgba(39,49,58,0.72)',
+        boxShadow: '12px 12px 28px rgba(0,0,0,0.30), -4px -4px 18px rgba(255,255,255,0.025)',
+      }}
+    >
+      <AlbumArtwork item={albumStack[0]} className="h-[92px] w-[92px] shrink-0" active />
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium uppercase" style={{ color: T.text.muted, letterSpacing: '0.08em' }}>
+          First save
+        </p>
+        <h2 className="mt-2 truncate text-xl font-bold leading-tight" style={{ color: T.text.primary }}>
+          First Light Mix
+        </h2>
+        <p className="mt-1 truncate text-sm" style={{ color: T.text.secondary }}>
+          Start building your listening space.
+        </p>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full" style={{ background: T.surface.border }}>
+          <div className="h-full w-[42%] rounded-full" style={{ background: T.accent }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthInput({
+  id,
+  icon: Icon,
+  label,
+  type,
+  value,
+  onChange,
+  onFocus,
+  onBlur,
+  placeholder,
+  required,
+  minLength,
+  focused,
+  children,
+}) {
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="block text-xs font-semibold uppercase tracking-wider mb-2"
-        style={{ color: '#A1A1AA', letterSpacing: '0.08em' }}
-      >
+      <label htmlFor={id} className="mb-3 block text-sm font-medium" style={{ color: T.text.secondary }}>
         {label}
       </label>
       <div
-        className="relative flex items-stretch rounded-xl overflow-hidden"
+        className="relative flex min-h-[62px] items-center overflow-hidden"
         style={{
-          background: '#111111',
-          border: `1.5px solid ${focused === fieldName ? 'rgba(0, 229, 255, 0.5)' : '#2A2A2A'}`,
-          boxShadow: focused === fieldName
-            ? '0 0 0 3px rgba(0, 229, 255, 0.08), 0 0 20px rgba(0, 229, 255, 0.06)'
-            : 'none',
-          transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+          borderRadius: 16,
+          background: focused ? T.surface.raised : T.surface.card,
+          boxShadow: focused
+            ? `0 0 0 3px rgba(3,170,226,0.13), inset 0 1px 0 rgba(255,255,255,0.04)`
+            : 'inset 3px 3px 8px rgba(0,0,0,0.24), inset -2px -2px 8px rgba(255,255,255,0.025)',
+          border: `1px solid ${focused ? 'rgba(3,170,226,0.55)' : 'rgba(39,49,58,0.78)'}`,
         }}
       >
-        {/* Icon area */}
-        <div
-          className="flex items-center justify-center flex-shrink-0"
-          style={{
-            width: 44,
-            minWidth: 44,
-            background: focused === fieldName ? 'rgba(0, 229, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)',
-            borderRight: `1px solid ${focused === fieldName ? 'rgba(0, 229, 255, 0.2)' : '#2A2A2A'}`,
-            transition: 'background 0.3s ease, border-color 0.3s ease',
-          }}
-        >
-          <Icon size={16} style={{ color: focused === fieldName ? '#00E5FF' : '#71717A', transition: 'color 0.3s' }} />
-        </div>
-        {/* Input */}
+        <Icon className="ml-5 shrink-0" size={20} style={{ color: focused ? T.accent : T.text.muted }} />
         <input
           id={id}
           type={type}
@@ -163,21 +298,15 @@ function InputField({ id, icon: Icon, label, type = 'text', value, onChange, onF
           placeholder={placeholder}
           required={required}
           minLength={minLength}
-          className="flex-1 min-w-0 py-3.5 px-3 text-sm outline-none"
-          style={{
-            background: 'transparent',
-            color: '#FFFFFF',
-            caretColor: '#00E5FF',
-          }}
+          className="min-w-0 flex-1 bg-transparent px-4 py-5 text-[15px] outline-none"
+          style={{ color: T.text.primary, caretColor: T.accent }}
         />
-        {/* Optional trailing element */}
         {children}
       </div>
     </div>
   );
 }
 
-/* ── main register component ── */
 export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -187,382 +316,212 @@ export default function Register() {
   const { register, isLoading, error, clearError } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const passwordStrength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 2 : 3;
+  const strength = [
+    { label: '', color: T.surface.border },
+    { label: 'Needs 6 characters', color: '#F87171' },
+    { label: 'Good start', color: '#F59E0B' },
+    { label: 'Strong password', color: T.support.lime },
+  ][passwordStrength];
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     try {
       await register(name, email, password);
       navigate('/');
-    } catch (err) {}
-  };
-
-  const passwordStrength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 2 : 3;
-  const strengthColors = ['', '#EF4444', '#F59E0B', '#22C55E'];
-  const strengthLabels = ['', 'Weak', 'Medium', 'Strong'];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.08, delayChildren: 0.15 },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } },
+    } catch (err) {
+      // Auth errors are exposed through the store.
+    }
   };
 
   return (
-    <div className="flex min-h-screen min-h-[100dvh] overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
-      {/* ── LEFT PANEL (visual showcase — desktop only) ── */}
-      <div className="hidden lg:flex lg:w-[55%] relative items-center justify-center overflow-hidden">
+    <main className="flex min-h-[100dvh] overflow-hidden" style={{ background: T.surface.base }}>
+      <AuthVisual />
+
+      <section className="relative flex min-h-[100dvh] w-full items-center justify-center px-5 py-5 sm:px-8 lg:w-[42%] lg:px-10">
         <div
           className="absolute inset-0"
           style={{
             background: `
-              radial-gradient(ellipse at 30% 20%, rgba(120, 0, 255, 0.12) 0%, transparent 50%),
-              radial-gradient(ellipse at 70% 80%, rgba(0, 229, 255, 0.1) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 50%, rgba(120, 0, 255, 0.05) 0%, transparent 60%),
-              linear-gradient(135deg, #050510 0%, #0a0a1a 50%, #080818 100%)`,
+              radial-gradient(ellipse at 50% 0%, rgba(124,108,255,0.10), transparent 48%),
+              linear-gradient(180deg, ${T.surface.shell} 0%, ${T.surface.base} 100%)`,
           }}
         />
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(120, 0, 255, 0.5) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(120, 0, 255, 0.5) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px',
-          }}
-        />
-
-        <FloatingParticle delay={0} duration={4} x={15} y={20} size={80} />
-        <FloatingParticle delay={1} duration={5} x={70} y={15} size={60} />
-        <FloatingParticle delay={2} duration={3.5} x={40} y={70} size={100} />
-        <FloatingParticle delay={0.5} duration={4.5} x={80} y={60} size={50} />
-        <FloatingParticle delay={1.5} duration={6} x={25} y={80} size={70} />
-
-        <div className="relative z-10 flex flex-col items-center text-center px-12">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
-          >
-            <VinylDisc />
-          </motion.div>
-
-          <motion.div
-            className="mt-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
-          >
-            <EqualizerBars />
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-            className="mt-10"
-          >
-            <h2
-              className="text-4xl xl:text-5xl font-bold tracking-tight"
-              style={{
-                background: 'linear-gradient(135deg, #FFFFFF 0%, #7800FF 50%, #00E5FF 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              Start Your
-              <br />
-              Music Journey
-            </h2>
-            <p className="mt-4 text-base xl:text-lg max-w-sm mx-auto" style={{ color: '#71717A' }}>
-              Create your account and unlock unlimited access to your personal cloud music library.
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="flex flex-wrap justify-center gap-3 mt-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-          >
-            {[
-              { icon: Headphones, label: 'Hi-Fi Audio' },
-              { icon: Disc3, label: 'Smart Playlists' },
-              { icon: AudioWaveform, label: 'Live Analytics' },
-            ].map(({ icon: Icon, label }) => (
-              <div
-                key={label}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium"
-                style={{
-                  background: 'rgba(120, 0, 255, 0.06)',
-                  border: '1px solid rgba(120, 0, 255, 0.15)',
-                  color: '#A1A1AA',
-                }}
-              >
-                <Icon size={14} style={{ color: '#7800FF' }} />
-                {label}
-              </div>
-            ))}
-          </motion.div>
-        </div>
-
-        <div
-          className="absolute bottom-0 left-0 right-0 h-32"
-          style={{ background: 'linear-gradient(to top, #080808, transparent)' }}
-        />
-      </div>
-
-      {/* ── RIGHT PANEL (register form) ── */}
-      <div
-        className="flex w-full lg:w-[45%] items-center justify-center px-6 sm:px-8 py-8 relative"
-        style={{ background: '#080808' }}
-      >
-        <div
-          className="absolute inset-0 lg:hidden"
-          style={{
-            background: `
-              radial-gradient(ellipse at 50% 20%, rgba(120, 0, 255, 0.08) 0%, transparent 60%),
-              radial-gradient(ellipse at 30% 70%, rgba(0, 229, 255, 0.05) 0%, transparent 50%)`,
-          }}
-        />
-        <div
-          className="hidden lg:block absolute left-0 top-0 bottom-0 w-32"
-          style={{ background: 'linear-gradient(to right, rgba(120, 0, 255, 0.03), transparent)' }}
-        />
-
         <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="relative w-full max-w-[400px]"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="relative w-full max-w-[440px]"
         >
-          {/* Mobile logo */}
-          <motion.div variants={itemVariants} className="lg:hidden mb-6 text-center">
-            <div
-              className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl"
-              style={{
-                background: 'rgba(0, 229, 255, 0.15)',
-                boxShadow: '0 0 30px rgba(0, 229, 255, 0.15)',
-              }}
-            >
-              <Music2 size={26} style={{ color: '#00E5FF' }} />
-            </div>
-            <h1 className="text-xl font-bold" style={{ color: '#FFFFFF' }}>Madhan Music</h1>
-          </motion.div>
+          <MobileBrand />
+          <MobileListeningPreview />
 
-          {/* Welcome text */}
-          <motion.div variants={itemVariants} className="mb-5 sm:mb-7">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: '#FFFFFF' }}>
-              Create Account
-            </h1>
-            <p className="mt-1.5 text-sm" style={{ color: '#71717A' }}>
-              Join Madhan Music and start streaming
-            </p>
-          </motion.div>
-
-          {/* Error */}
-          <AnimatePresence>
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                animate={{ opacity: 1, height: 'auto', marginBottom: 16 }}
-                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                className="overflow-hidden"
-              >
+          <div
+            className="p-6 sm:p-8 lg:p-10"
+            style={{
+              borderRadius: 26,
+              background: 'rgba(16,21,26,0.92)',
+              border: '1px solid rgba(39,49,58,0.78)',
+              boxShadow: '18px 18px 42px rgba(0,0,0,0.36), -6px -6px 24px rgba(255,255,255,0.025)',
+            }}
+          >
+            <div className="mb-6">
+              <div className="mb-4 flex items-center gap-3">
                 <div
-                  className="rounded-xl px-4 py-3 text-sm flex items-center gap-2.5"
+                  className="flex h-10 w-10 items-center justify-center"
+                  style={{ borderRadius: 14, background: T.surface.raised }}
+                >
+                  <Headphones size={20} style={{ color: T.accent }} />
+                </div>
+                <p className="text-sm" style={{ color: T.text.muted }}>
+                  Personal cloud streaming
+                </p>
+              </div>
+              <h1 className="text-[28px] font-bold leading-tight sm:text-[32px]" style={{ color: T.text.primary }}>
+                Create account
+              </h1>
+              <p className="mt-2 text-sm leading-6" style={{ color: T.text.secondary }}>
+                Start saving playlists, favorites, and your recently played tracks.
+              </p>
+            </div>
+
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="mb-5 flex items-start gap-3 p-3 text-sm"
                   style={{
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.25)',
-                    color: '#EF4444',
+                    borderRadius: 16,
+                    background: 'rgba(239,68,68,0.09)',
+                    border: '1px solid rgba(239,68,68,0.22)',
+                    color: '#FCA5A5',
                   }}
                 >
-                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#EF4444' }} />
-                  {error}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  <AlertCircle className="mt-0.5 shrink-0" size={17} />
+                  <span>{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name field */}
-            <motion.div variants={itemVariants}>
-              <InputField
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <AuthInput
                 id="register-name"
                 icon={User}
-                label="Full Name"
+                label="Full name"
                 type="text"
                 value={name}
-                onChange={(e) => { setName(e.target.value); clearError(); }}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  clearError();
+                }}
                 onFocus={() => setFocused('name')}
                 onBlur={() => setFocused(null)}
                 placeholder="Your name"
                 required
-                focused={focused}
-                fieldName="name"
+                focused={focused === 'name'}
               />
-            </motion.div>
 
-            {/* Email field */}
-            <motion.div variants={itemVariants}>
-              <InputField
+              <AuthInput
                 id="register-email"
                 icon={Mail}
-                label="Email Address"
+                label="Email address"
                 type="email"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); clearError(); }}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  clearError();
+                }}
                 onFocus={() => setFocused('email')}
                 onBlur={() => setFocused(null)}
                 placeholder="you@example.com"
                 required
-                focused={focused}
-                fieldName="email"
+                focused={focused === 'email'}
               />
-            </motion.div>
 
-            {/* Password field */}
-            <motion.div variants={itemVariants}>
-              <InputField
-                id="register-password"
-                icon={Lock}
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); clearError(); }}
-                onFocus={() => setFocused('password')}
-                onBlur={() => setFocused(null)}
-                placeholder="Min 6 characters"
-                required
-                minLength={6}
-                focused={focused}
-                fieldName="password"
-              >
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="flex items-center justify-center flex-shrink-0 px-3"
-                  style={{ color: '#71717A' }}
+              <div>
+                <AuthInput
+                  id="register-password"
+                  icon={Lock}
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    clearError();
+                  }}
+                  onFocus={() => setFocused('password')}
+                  onBlur={() => setFocused(null)}
+                  placeholder="Minimum 6 characters"
+                  required
+                  minLength={6}
+                  focused={focused === 'password'}
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </InputField>
-              {/* Password strength meter */}
-              {password.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="mt-2.5 flex items-center gap-2.5"
-                >
-                  <div className="flex flex-1 gap-1">
-                    {[1, 2, 3].map(i => (
-                      <div
-                        key={i}
-                        className="h-1 flex-1 rounded-full"
-                        style={{
-                          background: i <= passwordStrength ? strengthColors[passwordStrength] : '#2A2A2A',
-                          transition: 'background 0.3s ease',
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs font-medium" style={{ color: strengthColors[passwordStrength] || '#71717A' }}>
-                    {strengthLabels[passwordStrength]}
-                  </span>
-                </motion.div>
-              )}
-            </motion.div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                    className="mr-3 flex h-11 w-11 shrink-0 items-center justify-center"
+                    style={{ borderRadius: 12, color: T.text.muted }}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </AuthInput>
 
-            {/* Submit button */}
-            <motion.div variants={itemVariants} className="pt-1">
+                {password.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-3 flex items-center gap-3"
+                  >
+                    <div className="flex flex-1 gap-1.5">
+                      {[1, 2, 3].map((item) => (
+                        <span
+                          key={item}
+                          className="h-1.5 flex-1 rounded-full"
+                          style={{
+                            background: item <= passwordStrength ? strength.color : T.surface.border,
+                            boxShadow: item <= passwordStrength ? `0 0 10px ${strength.color}40` : 'none',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs font-medium" style={{ color: strength.color }}>
+                      {strength.label}
+                    </span>
+                  </motion.div>
+                )}
+              </div>
+
               <motion.button
                 type="submit"
                 disabled={isLoading}
-                className="w-full relative overflow-hidden rounded-xl py-3.5 text-sm font-semibold"
+                className="flex min-h-[62px] w-full items-center justify-center gap-2 text-[15px] font-bold"
                 style={{
-                  background: 'linear-gradient(135deg, #00E5FF 0%, #00B8D4 100%)',
-                  color: '#080808',
-                  opacity: isLoading ? 0.6 : 1,
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 0 20px rgba(0, 229, 255, 0.2), 0 4px 15px rgba(0, 229, 255, 0.15)',
+                  borderRadius: 16,
+                  background: T.accent,
+                  color: T.surface.base,
+                  opacity: isLoading ? 0.68 : 1,
+                  boxShadow: '0 0 26px rgba(3,170,226,0.22), inset 0 1px 0 rgba(255,255,255,0.22)',
                 }}
-                whileHover={!isLoading ? {
-                  boxShadow: '0 0 30px rgba(0, 229, 255, 0.35), 0 6px 20px rgba(0, 229, 255, 0.25)',
-                  scale: 1.01,
-                } : {}}
-                whileTap={!isLoading ? { scale: 0.985 } : {}}
+                whileTap={!isLoading ? { scale: 0.985 } : undefined}
               >
-                <motion.div
-                  className="absolute inset-0"
-                  style={{
-                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)',
-                  }}
-                  animate={{ x: ['-100%', '200%'] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                />
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  {isLoading ? (
-                    <>
-                      <motion.div
-                        className="w-4 h-4 rounded-full"
-                        style={{ border: '2px solid rgba(8, 8, 8, 0.3)', borderTopColor: '#080808' }}
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-                      />
-                      Creating Account...
-                    </>
-                  ) : (
-                    'Create Account'
-                  )}
-                </span>
+                {isLoading ? 'Creating account...' : 'Create account'}
+                {!isLoading && <ChevronRight size={18} />}
               </motion.button>
-            </motion.div>
-          </form>
+            </form>
 
-          {/* Divider */}
-          <motion.div variants={itemVariants} className="flex items-center gap-4 my-5">
-            <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #2A2A2A)' }} />
-            <span className="text-xs font-medium" style={{ color: '#71717A' }}>or</span>
-            <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, #2A2A2A)' }} />
-          </motion.div>
-
-          {/* Sign in link */}
-          <motion.p variants={itemVariants} className="text-center text-sm" style={{ color: '#71717A' }}>
-            Already have an account?{' '}
-            <Link
-              to="/login"
-              className="font-semibold inline-flex items-center gap-1"
-              style={{ color: '#00E5FF' }}
-            >
-              Sign In
-              <motion.span
-                animate={{ x: [0, 3, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                →
-              </motion.span>
-            </Link>
-          </motion.p>
-
-          {/* Footer branding */}
-          <motion.div variants={itemVariants} className="mt-6 flex items-center justify-center gap-2">
-            <div
-              className="flex h-6 w-6 items-center justify-center rounded-lg"
-              style={{ background: 'rgba(0, 229, 255, 0.1)' }}
-            >
-              <Music2 size={12} style={{ color: '#00E5FF' }} />
+            <div className="mt-6 flex items-center justify-between gap-4 text-sm">
+              <span style={{ color: T.text.muted }}>Already listening here?</span>
+              <Link className="inline-flex items-center gap-1 font-semibold" style={{ color: T.accent }} to="/login">
+                Sign in <ChevronRight size={16} />
+              </Link>
             </div>
-            <span className="text-xs font-medium" style={{ color: '#333333' }}>
-              Madhan Music • Personal Cloud Streaming
-            </span>
-          </motion.div>
+          </div>
+
         </motion.div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

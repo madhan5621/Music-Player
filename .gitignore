@@ -42,6 +42,6 @@ frontend/.env
 backend/node_modules/
 backend/dist/
 backend/.env
-
+design.md
 # GitHub Pages deployment branch
 gh-pages/

@@ -17,8 +17,8 @@ export default function AppLayout() {
 
   return (
     <div className="flex h-screen h-[100dvh] overflow-hidden bg-bg-primary">
-      {/* Desktop/Tablet Sidebar */}
-      {!isMobile && <Sidebar />}
+      {/* Sidebar – always rendered; desktop=fixed, tablet/mobile=overlay */}
+      <Sidebar />
 
       {/* Main Area */}
       <div className="flex flex-1 flex-col overflow-hidden">
