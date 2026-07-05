@@ -37,7 +37,7 @@ export default function Sidebar() {
           <h1 className="text-lg font-bold text-text-primary">Madhan Music</h1>
           <p className="text-xs text-text-muted">Personal Streaming</p>
         </div>
-        {isTablet && (
+        {(isTablet || isMobile) && (
           <button onClick={closeSidebar} className="ml-auto rounded-lg p-1.5 hover:bg-bg-hover">
             <X className="h-5 w-5 text-text-secondary" />
           </button>
@@ -104,7 +104,7 @@ export default function Sidebar() {
     );
   }
 
-  // Tablet: Overlay sidebar
+  // Tablet/Mobile: Overlay sidebar
   return (
     <AnimatePresence>
       {sidebarOpen && (
