@@ -92,6 +92,8 @@ npm run dev
    VITE_API_URL=https://music-player-s56t.onrender.com
    ```
 
+   If `.env` is missing during `npm run deploy`, the frontend uses `https://music-player-s56t.onrender.com` for production builds and `http://localhost:5000` only during local development.
+
 2. Update `frontend/package.json` homepage:
    ```json
    "homepage": "https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/"
