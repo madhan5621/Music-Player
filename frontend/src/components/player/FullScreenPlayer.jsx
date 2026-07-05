@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Repeat1, Heart, ListMusic, MoreHorizontal, ListPlus, Share2, Info, ChevronRight, Check, Plus, X } from 'lucide-react';
+import { ChevronDown, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Repeat1, Heart, ListMusic, MoreHorizontal, ListPlus, Share2, Info, ChevronRight, Plus, X } from 'lucide-react';
 import usePlayerStore from '../../store/usePlayerStore';
-import { playlistService } from '../../services/apiServices';
+import { playlistService, favoriteService } from '../../services/apiServices';
 import { formatDuration } from '../../utils/formatters';
 import { useSwipe } from '../../hooks/useHooks';
 
@@ -14,14 +14,34 @@ export default function FullScreenPlayer() {
   } = usePlayerStore();
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [playlistSubMenu, setPlaylistSubMenu] = useState(false);
+  const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
   const [playlists, setPlaylists] = useState([]);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   const [toast, setToast] = useState(null);
   const [songInfoOpen, setSongInfoOpen] = useState(false);
+  const [isFav, setIsFav] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
   const menuRef = useRef(null);
 
   const swipeHandlers = useSwipe(null, () => setShowFullScreen(false), 80);
+
+  // Check favorite status when song changes
+  useEffect(() => {
+    if (!currentSong?._id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await favoriteService.check([currentSong._id]);
+        if (!cancelled) {
+          const favMap = res.data || {};
+          setIsFav(!!favMap[currentSong._id]);
+        }
+      } catch {
+        if (!cancelled) setIsFav(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [currentSong?._id]);
 
   // Close menu on outside click
   useEffect(() => {
@@ -29,13 +49,11 @@ export default function FullScreenPlayer() {
     const handleClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false);
-        setPlaylistSubMenu(false);
       }
     };
     const handleKey = (e) => {
       if (e.key === 'Escape') {
         setMenuOpen(false);
-        setPlaylistSubMenu(false);
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -55,6 +73,20 @@ export default function FullScreenPlayer() {
 
   const showToast = (msg) => setToast(msg);
 
+  const handleToggleFavorite = async () => {
+    if (favLoading || !currentSong) return;
+    setFavLoading(true);
+    try {
+      const res = await favoriteService.toggle(currentSong._id);
+      const nowFav = res.data?.isFavorite ?? !isFav;
+      setIsFav(nowFav);
+      showToast(nowFav ? 'Added to Favorites' : 'Removed from Favorites');
+    } catch {
+      showToast('Failed to update favorite');
+    }
+    setFavLoading(false);
+  };
+
   const handleAddToQueue = () => {
     if (currentSong) {
       addToQueue(currentSong);
@@ -63,8 +95,9 @@ export default function FullScreenPlayer() {
     setMenuOpen(false);
   };
 
-  const handleOpenPlaylistSub = async () => {
-    setPlaylistSubMenu(true);
+  const handleOpenPlaylistModal = async () => {
+    setMenuOpen(false);
+    setPlaylistModalOpen(true);
     if (playlists.length === 0) {
       setLoadingPlaylists(true);
       try {
@@ -84,8 +117,7 @@ export default function FullScreenPlayer() {
     } catch {
       showToast('Already in playlist');
     }
-    setMenuOpen(false);
-    setPlaylistSubMenu(false);
+    setPlaylistModalOpen(false);
   };
 
   const handleShare = async () => {
@@ -185,6 +217,92 @@ export default function FullScreenPlayer() {
         )}
       </AnimatePresence>
 
+      {/* Add to Playlist Modal (full-screen modal, not dropdown) */}
+      <AnimatePresence>
+        {playlistModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setPlaylistModalOpen(false)}
+          >
+            <motion.div
+              initial={{ y: '100%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 200 }}
+              className="w-full sm:max-w-sm sm:mx-6 rounded-t-2xl sm:rounded-2xl bg-bg-card border border-border shadow-2xl max-h-[70vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Handle bar for mobile */}
+              <div className="flex justify-center pt-3 sm:hidden">
+                <div className="w-10 h-1 rounded-full bg-border" />
+              </div>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                <h3 className="text-lg font-bold text-text-primary">Add to Playlist</h3>
+                <button onClick={() => setPlaylistModalOpen(false)} className="rounded-full p-1.5 hover:bg-bg-hover transition-colors">
+                  <X className="h-5 w-5 text-text-secondary" />
+                </button>
+              </div>
+
+              {/* Song being added */}
+              <div className="flex items-center gap-3 px-5 py-3 bg-bg-hover/50">
+                <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-bg-card">
+                  {currentSong.coverImage ? (
+                    <img src={currentSong.coverImage} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center gradient-mesh">
+                      <ListMusic className="h-4 w-4 text-accent/40" />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-text-primary truncate">{currentSong.title}</p>
+                  <p className="text-xs text-text-secondary truncate">{currentSong.artist}</p>
+                </div>
+              </div>
+
+              {/* Playlist list */}
+              <div className="flex-1 overflow-y-auto">
+                {loadingPlaylists ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="h-6 w-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : playlists.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-text-muted">
+                    <ListMusic className="h-10 w-10 mb-2 opacity-40" />
+                    <p className="text-sm">No playlists found</p>
+                    <p className="text-xs mt-1">Create a playlist first</p>
+                  </div>
+                ) : (
+                  <div className="py-2">
+                    {playlists.map((pl) => (
+                      <button
+                        key={pl._id}
+                        onClick={() => handleAddToPlaylist(pl._id)}
+                        className="flex w-full items-center gap-3 px-5 py-3 text-sm text-text-primary hover:bg-bg-hover active:bg-bg-active transition-colors"
+                      >
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-bg-hover shrink-0">
+                          <ListMusic className="h-5 w-5 text-text-secondary" />
+                        </div>
+                        <div className="min-w-0 flex-1 text-left">
+                          <p className="font-medium truncate">{pl.name}</p>
+                          <p className="text-xs text-text-muted">{pl.songs?.length || 0} songs</p>
+                        </div>
+                        <Plus className="h-4 w-4 text-text-muted shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Content */}
       <div className="relative flex flex-1 flex-col px-6 pt-4 pb-safe">
         {/* Header */}
@@ -197,7 +315,7 @@ export default function FullScreenPlayer() {
           </div>
           <div className="relative" ref={menuRef}>
             <button
-              onClick={() => { setMenuOpen(v => !v); setPlaylistSubMenu(false); }}
+              onClick={() => setMenuOpen(v => !v)}
               className={`rounded-full p-2 transition-colors ${menuOpen ? 'bg-bg-hover text-text-primary' : 'hover:bg-bg-hover'}`}
             >
               <MoreHorizontal className="h-6 w-6 text-text-secondary" />
@@ -213,72 +331,38 @@ export default function FullScreenPlayer() {
                   transition={{ duration: 0.15 }}
                   className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl bg-bg-card border border-border shadow-2xl z-[110]"
                 >
-                  {!playlistSubMenu ? (
-                    <>
-                      <button
-                        onClick={handleAddToQueue}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-text-primary hover:bg-bg-hover transition-colors"
-                      >
-                        <ListPlus className="h-4 w-4 text-text-secondary" />
-                        Add to Queue
-                      </button>
-                      <button
-                        onClick={handleOpenPlaylistSub}
-                        className="flex w-full items-center justify-between px-4 py-3 text-sm text-text-primary hover:bg-bg-hover transition-colors"
-                      >
-                        <span className="flex items-center gap-3">
-                          <Plus className="h-4 w-4 text-text-secondary" />
-                          Add to Playlist
-                        </span>
-                        <ChevronRight className="h-4 w-4 text-text-muted" />
-                      </button>
-                      <div className="border-t border-border" />
-                      <button
-                        onClick={handleShare}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-text-primary hover:bg-bg-hover transition-colors"
-                      >
-                        <Share2 className="h-4 w-4 text-text-secondary" />
-                        Share
-                      </button>
-                      <button
-                        onClick={handleSongInfo}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-text-primary hover:bg-bg-hover transition-colors"
-                      >
-                        <Info className="h-4 w-4 text-text-secondary" />
-                        Song Info
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => setPlaylistSubMenu(false)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider hover:bg-bg-hover transition-colors border-b border-border"
-                      >
-                        <ChevronDown className="h-3 w-3 rotate-90" />
-                        Back
-                      </button>
-                      <div className="max-h-48 overflow-y-auto">
-                        {loadingPlaylists ? (
-                          <div className="flex items-center justify-center py-6">
-                            <div className="h-5 w-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                          </div>
-                        ) : playlists.length === 0 ? (
-                          <p className="px-4 py-4 text-sm text-text-muted text-center">No playlists found</p>
-                        ) : (
-                          playlists.map((pl) => (
-                            <button
-                              key={pl._id}
-                              onClick={() => handleAddToPlaylist(pl._id)}
-                              className="flex w-full items-center gap-3 px-4 py-3 text-sm text-text-primary hover:bg-bg-hover transition-colors"
-                            >
-                              <ListMusic className="h-4 w-4 text-text-secondary" />
-                              <span className="truncate">{pl.name}</span>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </>
-                  )}
+                  <button
+                    onClick={handleAddToQueue}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-text-primary hover:bg-bg-hover transition-colors"
+                  >
+                    <ListPlus className="h-4 w-4 text-text-secondary" />
+                    Add to Queue
+                  </button>
+                  <button
+                    onClick={handleOpenPlaylistModal}
+                    className="flex w-full items-center justify-between px-4 py-3 text-sm text-text-primary hover:bg-bg-hover transition-colors"
+                  >
+                    <span className="flex items-center gap-3">
+                      <Plus className="h-4 w-4 text-text-secondary" />
+                      Add to Playlist
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-text-muted" />
+                  </button>
+                  <div className="border-t border-border" />
+                  <button
+                    onClick={handleShare}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-text-primary hover:bg-bg-hover transition-colors"
+                  >
+                    <Share2 className="h-4 w-4 text-text-secondary" />
+                    Share
+                  </button>
+                  <button
+                    onClick={handleSongInfo}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-text-primary hover:bg-bg-hover transition-colors"
+                  >
+                    <Info className="h-4 w-4 text-text-secondary" />
+                    Song Info
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -306,8 +390,12 @@ export default function FullScreenPlayer() {
               <h2 className="text-xl font-bold text-text-primary truncate">{currentSong.title}</h2>
               <p className="mt-1 text-base text-text-secondary">{currentSong.artist}</p>
             </div>
-            <button className="ml-4 rounded-full p-2 text-text-secondary hover:text-accent transition-colors">
-              <Heart className="h-6 w-6" />
+            <button
+              onClick={handleToggleFavorite}
+              disabled={favLoading}
+              className={`ml-4 rounded-full p-2 transition-colors ${isFav ? 'text-rose-500' : 'text-text-secondary hover:text-accent'} ${favLoading ? 'opacity-50' : ''}`}
+            >
+              <Heart className="h-6 w-6" fill={isFav ? 'currentColor' : 'none'} />
             </button>
           </div>
         </div>

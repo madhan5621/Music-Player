@@ -170,12 +170,45 @@ const usePlayerStore = create((set, get) => ({
     set({ playbackSpeed: speed });
   },
 
-  addToQueue: (song) => set(s => ({ queue: [...s.queue, song] })),
+  addToQueue: (song) => set(s => {
+    // Insert right after the currently playing song (play-next behavior)
+    const newQueue = [...s.queue];
+    const insertAt = s.queueIndex >= 0 ? s.queueIndex + 1 : newQueue.length;
+    newQueue.splice(insertAt, 0, song);
+    return { queue: newQueue };
+  }),
+
+  addToQueueEnd: (song) => set(s => ({ queue: [...s.queue, song] })),
   
   removeFromQueue: (index) => set(s => {
     const newQueue = [...s.queue];
     newQueue.splice(index, 1);
-    return { queue: newQueue };
+    // Adjust queueIndex if removing before or at current
+    let newIndex = s.queueIndex;
+    if (index < s.queueIndex) {
+      newIndex = s.queueIndex - 1;
+    } else if (index === s.queueIndex) {
+      // If we removed the currently playing song, keep same index (next song shifts in)
+      newIndex = Math.min(s.queueIndex, newQueue.length - 1);
+    }
+    return { queue: newQueue, queueIndex: newIndex };
+  }),
+
+  moveInQueue: (fromIndex, toIndex) => set(s => {
+    if (fromIndex === toIndex) return s;
+    const newQueue = [...s.queue];
+    const [moved] = newQueue.splice(fromIndex, 1);
+    newQueue.splice(toIndex, 0, moved);
+    // Adjust queueIndex to track the currently playing song
+    let newQueueIndex = s.queueIndex;
+    if (s.queueIndex === fromIndex) {
+      newQueueIndex = toIndex;
+    } else if (fromIndex < s.queueIndex && toIndex >= s.queueIndex) {
+      newQueueIndex = s.queueIndex - 1;
+    } else if (fromIndex > s.queueIndex && toIndex <= s.queueIndex) {
+      newQueueIndex = s.queueIndex + 1;
+    }
+    return { queue: newQueue, queueIndex: newQueueIndex };
   }),
 
   clearQueue: () => set({ queue: [], queueIndex: -1 }),
